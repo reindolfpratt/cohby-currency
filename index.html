@@ -50,7 +50,7 @@ h1{font-size:17px;margin:0;letter-spacing:-.3px;font-weight:650}
 .row-head label,.results-head .title{font-size:12px;font-weight:650;color:var(--muted);letter-spacing:.1px}
 .hint{font-size:11px;color:var(--muted)}
 .send-row{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:22px;padding:15px 13px}
-.amt{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text);font-family:var(--mono);font-size:29px;font-weight:600;letter-spacing:-1px;width:100%;font-variant-numeric:tabular-nums;padding:0}
+.amt{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text);font-family:var(--mono);font-size:29px;font-weight:600;letter-spacing:-1px;width:100%;font-variant-numeric:tabular-nums;padding:0;text-align:right}
 .amt::placeholder{color:var(--muted);opacity:.5}
 .cur-pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:9px 11px;color:var(--text);font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 8px rgba(25,40,80,.05);transition:transform .12s,border-color .12s,background .12s}
 .cur-pill:active{transform:scale(.96)}
@@ -58,6 +58,15 @@ h1{font-size:17px;margin:0;letter-spacing:-.3px;font-weight:650}
 .cur-pill .flag{font-size:18px;line-height:1}
 .cur-pill .code{font-family:var(--mono);letter-spacing:.2px}
 .cur-pill .chev{font-size:9px;color:var(--muted);margin-left:1px}
+.cur-pill{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.cur-pill.is-dragging{opacity:.32}
+body.dragging-active{cursor:grabbing}
+.drag-ghost{position:fixed;z-index:1000;pointer-events:none;transform:translate(-50%,-50%) scale(1.06);box-shadow:0 14px 30px rgba(30,50,95,.24);opacity:.97;margin:0}
+.drag-ghost.ghost-out{opacity:0;transform:translate(-50%,-50%) scale(.9);transition:opacity .16s,transform .16s}
+.send-row,.rrow{transition:background .15s,box-shadow .15s,outline-color .15s;outline:2px dashed transparent;outline-offset:2px}
+.send-row.drop-active,.rrow.drop-active{outline-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 4px rgba(47,111,237,.08)}
+.send-row.flash,.rrow.flash{animation:flashswap .55s ease}
+@keyframes flashswap{0%{background:var(--accent-soft);outline-color:var(--accent)}100%{background:var(--surface-2);outline-color:transparent}}
 .swap-wrap{height:12px;position:relative;z-index:2}
 .swap-btn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;background:var(--surface);border:1px solid var(--line);box-shadow:0 8px 20px rgba(30,45,85,.14);color:var(--accent);font-size:19px;font-weight:700;display:grid;place-items:center;cursor:pointer;transition:transform .15s;line-height:1}
 .swap-btn:active{transform:translate(-50%,-50%) scale(.88) rotate(180deg)}
@@ -73,6 +82,7 @@ h1{font-size:17px;margin:0;letter-spacing:-.3px;font-weight:650}
 .quick button:active{transform:scale(.96);background:var(--accent-soft);color:var(--accent);border-color:var(--accent-line)}
 footer{text-align:center;font-size:10.5px;color:var(--muted);margin-top:20px;line-height:1.75}
 .copy{font-size:11.5px;font-weight:650;color:var(--text);margin-bottom:4px}
+.tiphint{margin-top:6px;opacity:.72}
 footer a{color:var(--accent);text-decoration:none}
 .backdrop{position:fixed;inset:0;background:var(--overlay);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40}
 .backdrop.show{opacity:1;pointer-events:auto}
@@ -112,26 +122,26 @@ footer a{color:var(--accent);text-decoration:none}
 
   <main class="card">
     <div class="row-head"><label for="fromAmount">You send</label><span class="hint" id="fromName"></span></div>
-    <div class="send-row">
-      <input id="fromAmount" class="amt" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="100" aria-label="Amount to send">
+    <div class="send-row" id="sendRow" data-drop="send">
       <button class="cur-pill active" id="fromBtn" data-pick="from" aria-label="Choose currency you send">
         <span class="flag" id="fromFlag">🇬🇧</span><span class="code" id="fromCode">GBP</span><span class="chev">▾</span>
       </button>
+      <input id="fromAmount" class="amt" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="100" aria-label="Amount to send">
     </div>
 
     <div class="swap-wrap"><button id="swapBtn" class="swap-btn" aria-label="Swap with first result" title="Swap with first result">⇅</button></div>
 
     <div class="results-head"><span class="title">You receive</span><span class="badge">3 currencies</span></div>
 
-    <div class="rrow">
+    <div class="rrow" id="rrow0" data-drop-row="0">
       <button class="cur-pill" id="toBtn0" data-pick="0" aria-label="Choose first receive currency"><span class="flag" id="flag0">🇬🇭</span><span class="code" id="code0">GHS</span><span class="chev">▾</span></button>
       <div class="rright"><div class="ramt" id="rAmt0">—</div><div class="rrate" id="rRate0"></div></div>
     </div>
-    <div class="rrow">
+    <div class="rrow" id="rrow1" data-drop-row="1">
       <button class="cur-pill" id="toBtn1" data-pick="1" aria-label="Choose second receive currency"><span class="flag" id="flag1">🇨🇦</span><span class="code" id="code1">CAD</span><span class="chev">▾</span></button>
       <div class="rright"><div class="ramt" id="rAmt1">—</div><div class="rrate" id="rRate1"></div></div>
     </div>
-    <div class="rrow">
+    <div class="rrow" id="rrow2" data-drop-row="2">
       <button class="cur-pill" id="toBtn2" data-pick="2" aria-label="Choose third receive currency"><span class="flag" id="flag2">🇺🇸</span><span class="code" id="code2">USD</span><span class="chev">▾</span></button>
       <div class="rright"><div class="ramt" id="rAmt2">—</div><div class="rrate" id="rRate2"></div></div>
     </div>
@@ -147,6 +157,7 @@ footer a{color:var(--accent);text-decoration:none}
   <footer>
     <div class="copy">© Cohby consulting services</div>
     Rates via <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">exchangerate-api.com</a> · works offline with saved rates
+    <div class="tiphint">Tip: drag a currency up onto “You send” to swap them</div>
   </footer>
 </div>
 
@@ -315,7 +326,91 @@ function renderList(q){
       '<span class="name">' + nameOf(c) + '</span>' + tail + '</button>';
   }).join("");
 }
-document.querySelectorAll("[data-pick]").forEach(b => b.addEventListener("click", () => openPicker(b.dataset.pick)));
+let drag = null, suppressClick = false;
+const DRAG_THRESHOLD = 8;
+function clearDropHighlights(){
+  document.querySelectorAll(".drop-active").forEach(el => el.classList.remove("drop-active"));
+}
+function flashSwap(el){
+  el.classList.remove("flash");
+  void el.offsetWidth;
+  el.classList.add("flash");
+  setTimeout(() => el.classList.remove("flash"), 600);
+}
+function swapWithSend(i){
+  setFromCode(toCodes[i]);
+  flashSwap($("sendRow"));
+  const row = $("rrow" + i);
+  if(row) flashSwap(row);
+}
+function onDragStart(e){
+  if(e.pointerType === "mouse" && e.button !== 0) return;
+  const pill = e.currentTarget;
+  drag = { pill:pill, source:pill.dataset.pick, startX:e.clientX, startY:e.clientY,
+           x:e.clientX, y:e.clientY, moved:false, ghost:null, target:null };
+  try{ pill.setPointerCapture(e.pointerId); }catch(err){}
+  pill.addEventListener("pointermove", onDragMove);
+  pill.addEventListener("pointerup", onDragEnd);
+  pill.addEventListener("pointercancel", onDragEnd);
+}
+function onDragMove(e){
+  if(!drag) return;
+  drag.x = e.clientX; drag.y = e.clientY;
+  if(!drag.moved && Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) > DRAG_THRESHOLD){
+    drag.moved = true;
+    const g = drag.pill.cloneNode(true);
+    g.removeAttribute("id");
+    g.classList.add("drag-ghost");
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.pill.classList.add("is-dragging");
+    document.body.classList.add("dragging-active");
+  }
+  if(!drag.moved) return;
+  if(e.cancelable) e.preventDefault();
+  drag.ghost.style.left = drag.x + "px";
+  drag.ghost.style.top = drag.y + "px";
+  const el = document.elementFromPoint(drag.x, drag.y);
+  const zone = el && el.closest("[data-drop='send']");
+  const row = el && el.closest("[data-drop-row]");
+  const target = zone ? "send" : (row ? row.dataset.dropRow : null);
+  if(drag.target !== target){
+    clearDropHighlights();
+    drag.target = target;
+    if(target === "send") $("sendRow").classList.add("drop-active");
+    else if(target !== null){ const r = $("rrow" + target); if(r) r.classList.add("drop-active"); }
+  }
+}
+function onDragEnd(e){
+  if(!drag) return;
+  const d = drag;
+  d.pill.removeEventListener("pointermove", onDragMove);
+  d.pill.removeEventListener("pointerup", onDragEnd);
+  d.pill.removeEventListener("pointercancel", onDragEnd);
+  try{ d.pill.releasePointerCapture(e.pointerId); }catch(err){}
+  if(d.moved){
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 400);
+    if(d.target === "send" && d.source !== "from") swapWithSend(Number(d.source));
+    else if(d.target !== "send" && d.target !== null && d.source === "from") swapWithSend(Number(d.target));
+    if(d.ghost){
+      const g = d.ghost;
+      g.classList.add("ghost-out");
+      setTimeout(() => g.remove(), 180);
+    }
+    d.pill.classList.remove("is-dragging");
+    document.body.classList.remove("dragging-active");
+    clearDropHighlights();
+  }
+  drag = null;
+}
+document.querySelectorAll("[data-pick]").forEach(pill => {
+  pill.addEventListener("pointerdown", onDragStart);
+  pill.addEventListener("click", () => {
+    if(suppressClick){ suppressClick = false; return; }
+    openPicker(pill.dataset.pick);
+  });
+});
 list.addEventListener("click", e => {
   const b = e.target.closest(".item");
   if(!b) return;
