@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0e14">
+<meta name="description" content="Cohby Currency — a fast, offline-capable currency converter showing one amount in three currencies at once.">
+<title>Cohby Currency</title>
+<style>
+:root{--bg:#f2f4f9;--card:#fff;--text:#141822;--muted:#6b7280;--line:#e4e8f0;--accent:#5558e6;--accent2:#8b5cf6;--chip:#eef0f6;--input:#f6f7fb;--shadow:0 14px 40px rgba(24,30,55,.10)}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0e14;--card:#151a24;--text:#f4f6fa;--muted:#98a2b3;--line:#272f3e;--accent:#818cf8;--accent2:#a78bfa;--chip:#1e2635;--input:#101620;--shadow:0 16px 40px rgba(0,0,0,.45)}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:radial-gradient(900px 480px at 50% -8%,rgba(99,102,241,.16),transparent 65%),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased}
+.app{width:100%;max-width:480px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 22px) 16px calc(env(safe-area-inset-bottom) + 28px)}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:11px}
+.logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#fff;font-size:22px;box-shadow:0 7px 18px rgba(99,102,241,.35)}
+h1{font-size:18px;margin:0;letter-spacing:-.3px;font-weight:750}
+.sub{font-size:12px;color:var(--muted);margin:2px 0 0}
+.icon-btn{width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:21px;display:grid;place-items:center;cursor:pointer;transition:transform .12s,background .12s}
+.icon-btn:active{transform:scale(.93);background:var(--chip)}
+.icon-btn.spin{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.status{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;padding:6px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);margin-bottom:14px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.16)}
+.status.offline .dot{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.16)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:var(--shadow)}
+.field{background:var(--input);border:1px solid var(--line);border-radius:16px;padding:13px 15px}
+.field-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.field-top label,.results-head{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+.hint{font-size:11px;color:var(--muted)}
+.field-row{display:flex;align-items:center;gap:8px}
+.amt{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text);font-size:32px;font-weight:750;letter-spacing:-.6px;width:100%;font-variant-numeric:tabular-nums;padding:0}
+.amt::placeholder{color:var(--muted);opacity:.45}
+.curr{display:flex;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 6px;flex-shrink:0;max-width:56%}
+.curr select{appearance:none;-webkit-appearance:none;border:0;outline:0;background:transparent;color:var(--text);font-size:14px;font-weight:750;max-width:140px;cursor:pointer;padding:6px 2px;text-align:right;direction:rtl}
+.curr select option,.rsel option{background:var(--card);color:var(--text);direction:ltr}
+.swap-wrap{height:10px;position:relative;z-index:2}
+.swap-btn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;border:4px solid var(--card);background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:21px;font-weight:800;cursor:pointer;box-shadow:0 7px 18px rgba(99,102,241,.38);display:grid;place-items:center;transition:transform .15s;line-height:1}
+.swap-btn:active{transform:translate(-50%,-50%) scale(.88) rotate(180deg)}
+.results-head{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 9px}
+.badge{background:var(--chip);color:var(--muted);border-radius:999px;padding:3px 9px;font-size:10px;font-weight:700;letter-spacing:0}
+.rrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--input);border:1px solid var(--line);border-radius:15px;padding:10px 13px;margin-bottom:8px}
+.rrow:last-child{margin-bottom:0}
+.rleft{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rsel{appearance:none;-webkit-appearance:none;border:0;outline:0;background:transparent;color:var(--text);font-size:16px;font-weight:750;padding:2px 0;cursor:pointer;min-width:96px}
+.rname{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.rright{text-align:right;min-width:0}
+.ramt{font-size:22px;font-weight:750;letter-spacing:-.4px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rrate{font-size:10px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.quick{display:flex;gap:8px;margin-top:14px}
+.quick button{flex:1;padding:11px 0;border-radius:13px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;transition:transform .1s,background .1s}
+.quick button:active{background:var(--chip);transform:scale(.96)}
+footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px;line-height:1.8}
+.copy{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px}
+footer a{color:var(--accent);text-decoration:none}
+@media (min-width:520px){.app{padding-top:32px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">⇄</div>
+      <div><h1>Cohby Currency</h1><p class="sub">166 currencies · live &amp; offline</p></div>
+    </div>
+    <button id="refreshBtn" class="icon-btn" aria-label="Refresh rates" title="Refresh rates">↻</button>
+  </header>
+
+  <div class="status" id="status"><span class="dot"></span> Checking rates…</div>
+
+  <main class="card">
+    <div class="field">
+      <div class="field-top"><label for="fromAmount">You send</label><span class="hint" id="fromName"></span></div>
+      <div class="field-row">
+        <input id="fromAmount" class="amt" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="100" aria-label="Amount to convert">
+        <div class="curr"><select id="fromCurrency" aria-label="Currency you send"></select></div>
+      </div>
+    </div>
+
+    <div class="swap-wrap"><button id="swapBtn" class="swap-btn" aria-label="Swap with first result" title="Swap with first result">⇅</button></div>
+
+    <div class="results-head"><span>You receive</span><span class="badge">3 currencies</span></div>
+
+    <div class="rrow">
+      <div class="rleft"><select class="rsel" id="toCurrency0" aria-label="First receive currency"></select><span class="rname" id="rName0"></span></div>
+      <div class="rright"><div class="ramt" id="rAmt0">—</div><div class="rrate" id="rRate0"></div></div>
+    </div>
+    <div class="rrow">
+      <div class="rleft"><select class="rsel" id="toCurrency1" aria-label="Second receive currency"></select><span class="rname" id="rName1"></span></div>
+      <div class="rright"><div class="ramt" id="rAmt1">—</div><div class="rrate" id="rRate1"></div></div>
+    </div>
+    <div class="rrow">
+      <div class="rleft"><select class="rsel" id="toCurrency2" aria-label="Third receive currency"></select><span class="rname" id="rName2"></span></div>
+      <div class="rright"><div class="ramt" id="rAmt2">—</div><div class="rrate" id="rRate2"></div></div>
+    </div>
+  </main>
+
+  <div class="quick" aria-label="Quick amounts">
+    <button type="button" data-amt="1">1</button>
+    <button type="button" data-amt="10">10</button>
+    <button type="button" data-amt="100">100</button>
+    <button type="button" data-amt="1000">1,000</button>
+  </div>
+
+  <footer>
+    <div class="copy">© Cohby consulting services</div>
+    Rates via <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">exchangerate-api.com</a> · works offline with saved rates
+  </footer>
+</div>
+
+<script>
+"use strict";
+const META = {"AED":["UAE Dirham","🇦🇪"],"AFN":["Afghan Afghani","🇦🇫"],"ALL":["Albanian Lek","🇦🇱"],"AMD":["Armenian Dram","🇦🇲"],"ANG":["Netherlands Antillean Guilder","🇨🇼"],"AOA":["Angolan Kwanza","🇦🇴"],"ARS":["Argentine Peso","🇦🇷"],"AUD":["Australian Dollar","🇦🇺"],"AWG":["Aruban Florin","🇦🇼"],"AZN":["Azerbaijani Manat","🇦🇿"],"BAM":["Bosnia-Herzegovina Convertible Mark","🇧🇦"],"BBD":["Barbadian Dollar","🇧🇧"],"BDT":["Bangladeshi Taka","🇧🇩"],"BGN":["Bulgarian Lev","🇧🇬"],"BHD":["Bahraini Dinar","🇧🇭"],"BIF":["Burundian Franc","🇧🇮"],"BMD":["Bermudian Dollar","🇧🇲"],"BND":["Brunei Dollar","🇧🇳"],"BOB":["Bolivian Boliviano","🇧🇴"],"BRL":["Brazilian Real","🇧🇷"],"BSD":["Bahamian Dollar","🇧🇸"],"BTN":["Bhutanese Ngultrum","🇧🇹"],"BWP":["Botswana Pula","🇧🇼"],"BYN":["Belarusian Ruble","🇧🇾"],"BZD":["Belize Dollar","🇧🇿"],"CAD":["Canadian Dollar","🇨🇦"],"CDF":["Congolese Franc","🇨🇩"],"CHF":["Swiss Franc","🇨🇭"],"CLF":["Chilean Unit of Account","🇨🇱"],"CLP":["Chilean Peso","🇨🇱"],"CNH":["Chinese Yuan (Offshore)","🇨🇳"],"CNY":["Chinese Yuan","🇨🇳"],"COP":["Colombian Peso","🇨🇴"],"CRC":["Costa Rican Colon","🇨🇷"],"CUP":["Cuban Peso","🇨🇺"],"CVE":["Cape Verdean Escudo","🇨🇻"],"CZK":["Czech Koruna","🇨🇿"],"DJF":["Djiboutian Franc","🇩🇯"],"DKK":["Danish Krone","🇩🇰"],"DOP":["Dominican Peso","🇩🇴"],"DZD":["Algerian Dinar","🇩🇿"],"EGP":["Egyptian Pound","🇪🇬"],"ERN":["Eritrean Nakfa","🇪🇷"],"ETB":["Ethiopian Birr","🇪🇹"],"EUR":["Euro","🇪🇺"],"FJD":["Fijian Dollar","🇫🇯"],"FKP":["Falkland Pound","🇫🇰"],"FOK":["Faeroese Krone","🇫🇴"],"GBP":["British Pound","🇬🇧"],"GEL":["Georgian Lari","🇬🇪"],"GGP":["Guernsey Pound","🇬🇬"],"GHS":["Ghanaian Cedi","🇬🇭"],"GIP":["Gibraltar Pound","🇬🇮"],"GMD":["Gambian Dalasi","🇬🇲"],"GNF":["Guinean Franc","🇬🇳"],"GTQ":["Guatemalan Quetzal","🇬🇹"],"GYD":["Guyanese Dollar","🇬🇾"],"HKD":["Hong Kong Dollar","🇭🇰"],"HNL":["Honduran Lempira","🇭🇳"],"HRK":["Croatian Kuna","🇭🇷"],"HTG":["Haitian Gourde","🇭🇹"],"HUF":["Hungarian Forint","🇭🇺"],"IDR":["Indonesian Rupiah","🇮🇩"],"ILS":["Israeli New Shekel","🇮🇱"],"IMP":["Isle of Man Pound","🇮🇲"],"INR":["Indian Rupee","🇮🇳"],"IQD":["Iraqi Dinar","🇮🇶"],"IRR":["Iranian Rial","🇮🇷"],"ISK":["Icelandic Krona","🇮🇸"],"JEP":["Jersey Pound","🇯🇪"],"JMD":["Jamaican Dollar","🇯🇲"],"JOD":["Jordanian Dinar","🇯🇴"],"JPY":["Japanese Yen","🇯🇵"],"KES":["Kenyan Shilling","🇰🇪"],"KGS":["Kyrgyz Som","🇰🇬"],"KHR":["Cambodian Riel","🇰🇭"],"KID":["Kiribati Dollar","🇰🇮"],"KMF":["Comorian Franc","🇰🇲"],"KRW":["South Korean Won","🇰🇷"],"KWD":["Kuwaiti Dinar","🇰🇼"],"KYD":["Cayman Islands Dollar","🇰🇾"],"KZT":["Kazakhstani Tenge","🇰🇿"],"LAK":["Lao Kip","🇱🇦"],"LBP":["Lebanese Pound","🇱🇧"],"LKR":["Sri Lankan Rupee","🇱🇰"],"LRD":["Liberian Dollar","🇱🇷"],"LSL":["Lesotho Loti","🇱🇸"],"LYD":["Libyan Dinar","🇱🇾"],"MAD":["Moroccan Dirham","🇲🇦"],"MDL":["Moldovan Leu","🇲🇩"],"MGA":["Malagasy Ariary","🇲🇬"],"MKD":["Macedonian Denar","🇲🇰"],"MMK":["Myanmar Kyat","🇲🇲"],"MNT":["Mongolian Tugrik","🇲🇳"],"MOP":["Macanese Pataca","🇲🇴"],"MRU":["Mauritanian Ouguiya","🇲🇷"],"MUR":["Mauritius Rupee","🇲🇺"],"MVR":["Maldivian Rufiyaa","🇲🇻"],"MWK":["Malawian Kwacha","🇲🇼"],"MXN":["Mexican Peso","🇲🇽"],"MYR":["Malaysian Ringgit","🇲🇾"],"MZN":["Mozambican Metical","🇲🇿"],"NAD":["Namibian Dollar","🇳🇦"],"NGN":["Nigerian Naira","🇳🇬"],"NIO":["Nicaraguan Cordoba","🇳🇮"],"NOK":["Norwegian Krone","🇳🇴"],"NPR":["Nepalese Rupee","🇳🇵"],"NZD":["New Zealand Dollar","🇳🇿"],"OMR":["Omani Rial","🇴🇲"],"PAB":["Panamanian Balboa","🇵🇦"],"PEN":["Peruvian Sol","🇵🇪"],"PGK":["Papua New Guinean Kina","🇵🇬"],"PHP":["Philippine Peso","🇵🇭"],"PKR":["Pakistani Rupee","🇵🇰"],"PLN":["Polish Zloty","🇵🇱"],"PYG":["Paraguayan Guarani","🇵🇾"],"QAR":["Qatari Rial","🇶🇦"],"RON":["Romanian Leu","🇷🇴"],"RSD":["Serbian Dinar","🇷🇸"],"RUB":["Russian Ruble","🇷🇺"],"RWF":["Rwandan Franc","🇷🇼"],"SAR":["Saudi Riyal","🇸🇦"],"SBD":["Solomon Islands Dollar","🇸🇧"],"SCR":["Seychellois Rupee","🇸🇨"],"SDG":["Sudanese Pound","🇸🇩"],"SEK":["Swedish Krona","🇸🇪"],"SGD":["Singapore Dollar","🇸🇬"],"SHP":["Saint Helena Pound","🇸🇭"],"SLE":["Sierra Leonean Leone","🇸🇱"],"SLL":["Sierra Leonean Leone (old)","🇸🇱"],"SOS":["Somali Shilling","🇸🇴"],"SRD":["Surinamese Dollar","🇸🇷"],"SSP":["South Sudanese Pound","🇸🇸"],"STN":["Sao Tome and Principe Dobra","🇸🇹"],"SYP":["Syrian Pound","🇸🇾"],"SZL":["Swazi Lilangeni","🇸🇿"],"THB":["Thai Baht","🇹🇭"],"TJS":["Tajik Somoni","🇹🇯"],"TMT":["Turkmenistan Manat","🇹🇲"],"TND":["Tunisian Dinar","🇹🇳"],"TOP":["Tongan Pa'anga","🇹🇴"],"TRY":["Turkish Lira","🇹🇷"],"TTD":["Trinidad and Tobago Dollar","🇹🇹"],"TVD":["Tuvaluan Dollar","🇹🇻"],"TWD":["New Taiwan Dollar","🇹🇼"],"TZS":["Tanzanian Shilling","🇹🇿"],"UAH":["Ukrainian Hryvnia","🇺🇦"],"UGX":["Ugandan Shilling","🇺🇬"],"USD":["US Dollar","🇺🇸"],"UYU":["Uruguayan Peso","🇺🇾"],"UZS":["Uzbekistani Som","🇺🇿"],"VES":["Venezuelan Bolivar","🇻🇪"],"VND":["Vietnamese Dong","🇻🇳"],"VUV":["Vanuatu Vatu","🇻🇺"],"WST":["Samoan Tala","🇼🇸"],"XAF":["CFA Franc BEAC","🇨🇲"],"XCD":["East Caribbean Dollar","🇦🇬"],"XCG":["Caribbean Guilder","🇨🇼"],"XDR":["IMF Special Drawing Rights","🇺🇳"],"XOF":["CFA Franc BCEAO","🇸🇳"],"XPF":["CFP Franc","🇵🇫"],"YER":["Yemeni Rial","🇾🇪"],"ZAR":["South African Rand","🇿🇦"],"ZMW":["Zambian Kwacha","🇿🇲"],"ZWG":["Zimbabwean Gold","🇿🇼"],"ZWL":["Zimbabwean Dollar","🇿🇼"]};
+const FALLBACK = { date: "Fri, 20 Nov 2026 00:02:32 +0000", rates: {"USD":1,"AED":3.6725,"AFN":65.113428,"ALL":82.05925,"AMD":360.624942,"ANG":1.79,"AOA":929.635418,"ARS":1562.9893,"AUD":1.498714,"AWG":1.79,"AZN":1.699783,"BAM":1.781282,"BBD":2,"BDT":124.415609,"BGN":1.781282,"BHD":0.376,"BIF":3006.086095,"BMD":1,"BND":1.290845,"BOB":11.727068,"BRL":5.8932,"BSD":1,"BTN":93.371454,"BWP":14.468124,"BYN":2.993756,"BZD":2,"CAD":1.432537,"CDF":2312.357981,"CHF":0.843437,"CLF":0.025497,"CLP":1007.791135,"CNH":6.677589,"CNY":6.69198,"COP":3345.392865,"CRC":445.219542,"CUP":24,"CVE":100.424381,"CZK":22.253478,"DJF":177.721,"DKK":6.804025,"DOP":60.387529,"DZD":137.096702,"EGP":53.814593,"ERN":15,"ETB":161.810984,"EUR":0.910749,"FJD":2.289933,"FKP":0.762363,"FOK":6.801763,"GBP":0.762372,"GEL":2.592108,"GGP":0.762363,"GHS":11.783525,"GIP":0.762363,"GMD":74.769073,"GNF":8850.516095,"GTQ":7.639029,"GYD":209.037802,"HKD":7.844282,"HNL":26.861412,"HRK":6.862082,"HTG":131.017207,"HUF":338.090243,"IDR":18262.025806,"ILS":3.301838,"IMP":0.762363,"INR":93.372746,"IQD":1514.133432,"IRR":1811198.088482,"ISK":124.785153,"JEP":0.762363,"JMD":158.428817,"JOD":0.709,"JPY":159.74951,"KES":129.983881,"KGS":87.436617,"KHR":4066.645676,"KID":1.498069,"KMF":448.062002,"KRW":1330.972965,"KWD":0.311124,"KYD":0.833333,"KZT":449.86229,"LAK":22368.666506,"LBP":89500,"LKR":332.636029,"LRD":168.313141,"LSL":17.432159,"LYD":6.461135,"MAD":9.961938,"MDL":18.332883,"MGA":4576.637142,"MKD":55.881655,"MMK":2099.617586,"MNT":3605.489846,"MOP":8.079594,"MRU":40.546807,"MUR":47.0287,"MVR":15.434529,"MWK":1742.291451,"MXN":19.029289,"MYR":4.112684,"MZN":63.772528,"NAD":17.432159,"NGN":1352.930642,"NIO":36.774705,"NOK":9.734535,"NPR":149.394326,"NZD":1.820727,"OMR":0.384497,"PAB":1,"PEN":3.42988,"PGK":4.494255,"PHP":63.761773,"PKR":276.460596,"PLN":4.032103,"PYG":6264.559451,"QAR":3.64,"RON":4.867339,"RSD":107.099789,"RUB":82.021771,"RWF":1479.510633,"SAR":3.75,"SBD":8.027136,"SCR":14.155141,"SDG":511.551776,"SEK":10.182672,"SGD":1.290845,"SHP":0.762363,"SLE":22.929351,"SLL":22929.350553,"SOS":570.902347,"SRD":37.460728,"SSP":5808.743288,"STN":22.313493,"SYP":121.722251,"SZL":17.432159,"THB":33.94469,"TJS":9.207493,"TMT":3.498121,"TND":3.053816,"TOP":2.397731,"TRY":50.534266,"TTD":6.766899,"TVD":1.498069,"TWD":32.986624,"TZS":2656.845444,"UAH":45.098847,"UGX":4138.539471,"UYU":40.589378,"UZS":11967.454061,"VES":918.7662,"VND":25729.721904,"VUV":120.743185,"WST":2.785757,"XAF":597.416002,"XCD":2.7,"XCG":1.79,"XDR":0.743233,"XOF":597.416002,"XPF":108.682195,"YER":236.393166,"ZAR":17.409621,"ZMW":20.627436,"ZWG":26.5698,"ZWL":26.5698} };
+const API = "https://open.er-api.com/v6/latest/USD";
+const KEY = "cohby-currency-v1";
+const $ = id => document.getElementById(id);
+const fromAmt = $("fromAmount"), fromCur = $("fromCurrency");
+const sels = [$("toCurrency0"), $("toCurrency1"), $("toCurrency2")];
+let rates = {}, updated = "", live = false;
+let prevFrom = "USD", prevTo = ["EUR", "GBP", "JPY"];
+
+function nameOf(c){ return META[c] ? META[c][0] : c; }
+function buildSelect(sel, selected, short){
+  sel.innerHTML = Object.keys(rates).sort().map(c => {
+    const m = META[c] || [c, "🏳️"];
+    return '<option value="' + c + '"' + (c === selected ? " selected" : "") + '>' + m[1] + " " + c + (short ? "" : " · " + m[0]) + "</option>";
+  }).join("");
+}
+function validCodes(){
+  const codes = Object.keys(rates).sort();
+  const used = new Set([fromCur.value]);
+  sels.forEach(s => {
+    if(used.has(s.value)) s.value = codes.find(c => !used.has(c)) || s.value;
+    used.add(s.value);
+  });
+}
+function snapshotPrev(){ prevFrom = fromCur.value; prevTo = sels.map(s => s.value); }
+function fmt(v){
+  if(!isFinite(v)) return "0";
+  const a = Math.abs(v);
+  const d = a === 0 ? 2 : a < 0.01 ? 6 : a < 1 ? 5 : a < 100 ? 4 : 2;
+  return v.toLocaleString("en-US", { maximumFractionDigits: d });
+}
+function rateFmt(v){
+  const a = Math.abs(v), d = a >= 100 ? 2 : a >= 1 ? 4 : 6;
+  return v.toLocaleString("en-US", { maximumFractionDigits: d });
+}
+function prettyDate(s){
+  const d = new Date(s);
+  return isNaN(d) ? (s || "") : d.toLocaleString(undefined, { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" });
+}
+function setStatus(){
+  const s = $("status");
+  s.className = "status" + (live ? "" : " offline");
+  s.innerHTML = '<span class="dot"></span> ' + (live ? "Live rates · updated " + updated : "Offline · saved rates from " + updated);
+}
+function computeAll(){
+  const amt = parseFloat(fromAmt.value.replace(/,/g, "")) || 0;
+  const f = fromCur.value;
+  if(!rates[f]) return;
+  sels.forEach((sel, i) => {
+    const t = sel.value;
+    if(!rates[t]) return;
+    const r = rates[t] / rates[f];
+    $("rAmt" + i).textContent = fmt((amt / rates[f]) * rates[t]);
+    $("rRate" + i).textContent = "1 " + f + " = " + rateFmt(r) + " " + t;
+    $("rName" + i).textContent = nameOf(t);
+  });
+  $("fromName").textContent = nameOf(f);
+}
+function clean(el){
+  let v = el.value.replace(/[^\d.]/g, "");
+  const p = v.indexOf(".");
+  if(p !== -1) v = v.slice(0, p + 1) + v.slice(p + 1).replace(/\./g, "");
+  if(v.length > 18) v = v.slice(0, 18);
+  el.value = v;
+}
+function savePrefs(){
+  try{ localStorage.setItem(KEY + "-prefs", JSON.stringify({ from:fromCur.value, to:sels.map(s => s.value), amt:fromAmt.value })); }catch(e){}
+}
+function loadPrefs(){ try{ return JSON.parse(localStorage.getItem(KEY + "-prefs")) || {}; }catch(e){ return {}; } }
+function loadCache(){
+  try{
+    const c = JSON.parse(localStorage.getItem(KEY));
+    if(c && c.rates && Object.keys(c.rates).length > 10){ rates = c.rates; updated = c.updated || ""; live = false; }
+    else throw 0;
+  }catch(e){ rates = FALLBACK.rates; updated = prettyDate(FALLBACK.date); live = false; }
+}
+async function fetchRates(){
+  const btn = $("refreshBtn");
+  btn.classList.add("spin");
+  try{
+    const res = await fetch(API, { cache:"no-store" });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const d = await res.json();
+    if(d.result !== "success" || !d.rates || !d.rates.USD) throw new Error("bad data");
+    rates = d.rates; updated = prettyDate(d.time_last_update_utc); live = true;
+    const f = fromCur.value, ts = sels.map(s => s.value);
+    buildSelect(fromCur, rates[f] ? f : "USD", false);
+    sels.forEach((s, i) => buildSelect(s, rates[ts[i]] ? ts[i] : ["EUR","GBP","JPY"][i] || Object.keys(rates)[i], true));
+    try{ localStorage.setItem(KEY, JSON.stringify({ rates:rates, updated:updated, saved:Date.now() })); }catch(e){}
+  }catch(e){
+    loadCache();
+    const f = fromCur.value, ts = sels.map(s => s.value);
+    buildSelect(fromCur, rates[f] ? f : "USD", false);
+    sels.forEach((s, i) => buildSelect(s, rates[ts[i]] ? ts[i] : ["EUR","GBP","JPY"][i] || Object.keys(rates)[i], true));
+  }finally{
+    btn.classList.remove("spin");
+    validCodes(); snapshotPrev(); setStatus(); computeAll();
+  }
+}
+function onFromChange(){
+  const v = fromCur.value;
+  const j = sels.findIndex(s => s.value === v);
+  if(j !== -1){ sels[j].value = prevFrom; prevTo[j] = prevFrom; }
+  prevFrom = v; validCodes(); snapshotPrev(); computeAll(); savePrefs();
+}
+function onToChange(i){
+  const v = sels[i].value, old = prevTo[i];
+  if(v === fromCur.value){ fromCur.value = old; prevFrom = fromCur.value; }
+  else{
+    const j = sels.findIndex((s, k) => k !== i && s.value === v);
+    if(j !== -1){ sels[j].value = old; prevTo[j] = old; }
+  }
+  prevTo[i] = v; validCodes(); snapshotPrev(); computeAll(); savePrefs();
+}
+fromAmt.addEventListener("input", () => { clean(fromAmt); computeAll(); savePrefs(); });
+fromCur.addEventListener("change", onFromChange);
+sels.forEach((s, i) => s.addEventListener("change", () => onToChange(i)));
+$("swapBtn").addEventListener("click", () => {
+  const f = fromCur.value;
+  fromCur.value = sels[0].value;
+  sels[0].value = f;
+  validCodes(); snapshotPrev(); computeAll(); savePrefs();
+});
+$("refreshBtn").addEventListener("click", fetchRates);
+document.querySelectorAll(".quick button").forEach(b => b.addEventListener("click", () => { fromAmt.value = b.dataset.amt; computeAll(); savePrefs(); }));
+window.addEventListener("online", fetchRates);
+
+(function init(){
+  loadCache();
+  const p = loadPrefs();
+  const f = p.from && rates[p.from] ? p.from : (rates.USD ? "USD" : Object.keys(rates)[0]);
+  const defaults = ["EUR", "GBP", "JPY"];
+  buildSelect(fromCur, f, false);
+  sels.forEach((s, i) => buildSelect(s, p.to && p.to[i] && rates[p.to[i]] ? p.to[i] : defaults[i], true));
+  fromAmt.value = p.amt || "100";
+  validCodes(); snapshotPrev(); setStatus(); computeAll();
+  fetchRates();
+  setInterval(fetchRates, 30 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
