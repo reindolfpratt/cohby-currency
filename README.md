@@ -6,6 +6,8 @@ A phone-friendly, single-file currency converter. Enter one amount in "You send"
 
 - 166 currencies, live daily rates from [exchangerate-api.com](https://www.exchangerate-api.com/)
 - Works offline using a built-in snapshot and locally cached rates
+- Defaults to GBP → GHS / CAD / USD, all changeable
+- Searchable currency picker — filter by name or code from a bottom sheet
 - Three independently selectable receive currencies with live rate lines
 - Duplicate selections swap automatically instead of repeating a currency
 - Light/dark themes, safe-area padding for notched phones, no horizontal overflow
